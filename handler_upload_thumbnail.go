@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
 	"github.com/google/uuid"
@@ -25,11 +28,11 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 
 	contentType := header.Header.Get("Content-Type")
 
-	byteImage, err := io.ReadAll(file)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Unable to read form file", err)
-		return
-	}
+	// byteImage, err := io.ReadAll(file)
+	// if err != nil {
+	// 	respondWithError(w, http.StatusInternalServerError, "Unable to read form file", err)
+	// 	return
+	// }
 
 	videoIDString := r.PathValue("videoID")
 	videoID, err := uuid.Parse(videoIDString)
@@ -56,17 +59,36 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	thumb := thumbnail{
-		data:      byteImage,
-		mediaType: contentType,
+	// thumb := thumbnail{
+	// 	data:      byteImage,
+	// 	mediaType: contentType,
+	// }
+	// videoThumbnails[videoID] = thumb
+	// stringImage := base64.StdEncoding.EncodeToString(byteImage)
+
+	ext, _ := mime.ExtensionsByType(contentType)
+	if len(ext) == 0 {
+		ext = []string{".bin"}
+	}
+	videoTypeStr := fmt.Sprintf("%s%s", videoIDString, ext[0])
+	filePath := filepath.Join(cfg.assetsRoot, videoTypeStr)
+
+	fileCreate, err := os.Create(filePath)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "не удалось создать файл", err)
+		return
+	}
+	if _, err := io.Copy(fileCreate, file); err != nil {
+		respondWithError(w, http.StatusInternalServerError, "не удалось копировать файл", err)
+		return
 	}
 
-	videoThumbnails[videoID] = thumb
 	scheme := "http"
 	if r.TLS != nil {
 		scheme = "https"
 	}
-	urlThumb := fmt.Sprintf("%s://%s/api/thumbnails/%s", scheme, r.Host, videoIDString)
+	urlThumb := fmt.Sprintf("%s://%s/assets/%s", scheme, r.Host, videoTypeStr)
+	// urlThumb := fmt.Sprintf("data:%s;base64,%s", contentType, stringImage)
 	video.ThumbnailURL = &urlThumb
 
 	if err := cfg.db.UpdateVideo(video); err != nil {
