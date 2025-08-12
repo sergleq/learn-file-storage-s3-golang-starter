@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -41,4 +44,47 @@ func getRandomAssetsName(numByte int) string {
 	bt := make([]byte, numByte)
 	rand.Read(bt)
 	return base64.RawURLEncoding.EncodeToString(bt)
+}
+
+func getVideoAspectRatio(filePath string) (string, error) {
+	cmd := exec.Command("ffprobe", "-v", "error", "-print_format", "json", "-show_streams", filePath)
+
+	var bufer bytes.Buffer
+	cmd.Stdout = &bufer
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("ffprobe: %v", err)
+	}
+
+	type aspectRatio struct {
+		Streams []struct {
+			AR string `json:"display_aspect_ratio"`
+		} `json:"streams"`
+	}
+	var aspRat aspectRatio
+
+	if err := json.Unmarshal(bufer.Bytes(), &aspRat); err != nil {
+		return "", fmt.Errorf("unmarshal ffprobe json: %w", err)
+	}
+
+	switch aspRat.Streams[0].AR {
+	case "16:9":
+		return "landscape", nil
+	case "9:16":
+		return "portrait", nil
+	default:
+		return "other", nil
+	}
+}
+
+func processVideoForFastStart(filePath string) (string, error) {
+	newPath := filePath + ".processing"
+
+	cmd := exec.Command("ffmpeg", "-i", filePath, "-c", "copy", "-movflags", "faststart", "-f", "mp4", newPath)
+
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("ffprobe: %v", err)
+	}
+
+	return newPath, nil
 }
