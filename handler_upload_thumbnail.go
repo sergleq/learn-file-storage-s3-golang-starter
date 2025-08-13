@@ -30,8 +30,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	const maxMemory = 10 << 20 // 10 MB
-	r.ParseMultipartForm(maxMemory)
+	r.ParseMultipartForm(MaxThumbnailSize)
 
 	file, header, err := r.FormFile("thumbnail")
 	if err != nil {
@@ -45,8 +44,8 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		respondWithError(w, http.StatusBadRequest, "Invalid Content-Type", err)
 		return
 	}
-	if mediaType != "image/jpeg" && mediaType != "image/png" {
-		respondWithError(w, http.StatusBadRequest, "Invalid file type", nil)
+	if mediaType != ImageJPEGType && mediaType != ImagePNGType {
+		respondWithError(w, StatusBadRequest, "Invalid file type", nil)
 		return
 	}
 

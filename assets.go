@@ -68,12 +68,12 @@ func getVideoAspectRatio(filePath string) (string, error) {
 	}
 
 	switch aspRat.Streams[0].AR {
-	case "16:9":
-		return "landscape", nil
-	case "9:16":
-		return "portrait", nil
+	case AspectRatio16x9:
+		return LandscapePrefix, nil
+	case AspectRatio9x16:
+		return PortraitPrefix, nil
 	default:
-		return "other", nil
+		return OtherPrefix, nil
 	}
 }
 
