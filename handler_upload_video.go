@@ -88,7 +88,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 	// Step 9: Return success response
 	response := VideoUploadResponse{
 		VideoID:  videoID,
-		VideoURL: fmt.Sprintf("%s,%s", cfg.s3Bucket, s3Key),
+		VideoURL: fmt.Sprintf("https://%s/%s", cfg.s3CfDistribution, s3Key),
 		Message:  "Video uploaded successfully",
 	}
 	respondWithJSON(w, StatusOK, response)
@@ -225,7 +225,7 @@ func (cfg *apiConfig) uploadVideoToS3(processedVideoPath, mediaType string) (str
 
 // updateVideoInDatabase updates the video record in the database
 func (cfg *apiConfig) updateVideoInDatabase(video *database.Video, s3Key string) error {
-	videoURL := fmt.Sprintf("%s,%s", cfg.s3Bucket, s3Key)
+	videoURL := fmt.Sprintf("https://%s/%s", cfg.s3CfDistribution, s3Key)
 	video.VideoURL = &videoURL
 
 	return cfg.db.UpdateVideo(*video)

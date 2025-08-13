@@ -1,7 +1,5 @@
 package main
 
-import "time"
-
 // HTTP status codes
 const (
 	StatusOK                  = 200
@@ -22,9 +20,7 @@ const (
 )
 
 // Time durations
-const (
-	PresignedURLExpiration = time.Hour
-)
+const ()
 
 // Media types
 const (
